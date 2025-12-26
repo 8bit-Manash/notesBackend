@@ -9,7 +9,7 @@ def get_summarizer():
         print("⏳ Loading summarization model...")
         _summarizer = pipeline(
             "summarization",
-            model="facebook/bart-large-cnn"
+            model="google/flan-t5-small"
         )
         print("✅ Model loaded")
     return _summarizer
@@ -19,12 +19,12 @@ def summarize_text_hf(text: str) -> str:
     summarizer = get_summarizer()
 
     summary = summarizer(
-        text,
+        "summarize: " + text,
         max_length=120,
-        min_length=60,
+        min_length=50,
         do_sample=True,
-        temperature=0.7,
-        top_p=0.9
+        temperature=0.7
     )
+
 
     return summary[0]["summary_text"]
