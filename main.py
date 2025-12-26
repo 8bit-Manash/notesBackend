@@ -25,6 +25,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ✅ Root route (FIX)
+@app.get("/")
+def root():
+    return {
+        "message": "Notes API is running successfully 🚀"
+    }
+
 # Attach all routes (APIs) from routes.py to this FastAPI app
 app.include_router(router)
 
