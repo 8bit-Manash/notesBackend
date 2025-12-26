@@ -4,7 +4,7 @@ from fastapi import APIRouter
 # Import Note model for data validation
 from models import Note
 
-# bson -> binary JSON
+# bson -> binary JSON (used to work with MongoDB ObjectId)
 from bson import ObjectId
 
 # Import MongoDB collection to store and fetch notes
@@ -18,20 +18,28 @@ router = APIRouter()
 # Note → Pydantic model for data validation
 @router.post("/notes")
 def create_note(note: Note):
-    # Convert note object into dictionary and insert into MongoDB JSON → Note object → dict → MongoDB
+    # Convert note object into dictionary and insert into MongoDB
+    # JSON → Note object → dict → MongoDB
     notes_collection.insert_one(note.dict())
-    return {"message": "Note created"}
+
+    # Send success message to frontend
+    return {
+        "success": True,
+        "message": "Note added successfully"
+    }
 
 # GET API to fetch all notes
 @router.get("/notes")
 def get_notes():
     # Create empty list to store notes
     notes = []
-        # Fetch all documents from MongoDB
+
+    # Fetch all documents from MongoDB
     # {} means fetch all records
     # {"_id": 0} removes MongoDB auto-generated _id field
     for note in notes_collection.find():
         # Add each note into list
+        # Convert MongoDB ObjectId into string before sending to frontend
         notes.append(
             {
                 "title": note["title"],
@@ -39,15 +47,18 @@ def get_notes():
                 "id": str(note["_id"])
             }
         )
+
+    # Return list of notes to frontend
     return notes
 
-
+# PUT API to update an existing note
 @router.put("/notes/{note_id}")
 def update_note(note_id: str, note: Note):
-    # Convert note object into dictionary and insert into MongoDB JSON → Note object → dict → MongoDB
+    # Print ID received from frontend (debug purpose)
     print("ID coming from frontend:", note_id)
     print("Type of ID:", type(note_id))
 
+    # Update note by matching MongoDB _id
     result = notes_collection.update_one(
         {"_id": ObjectId(note_id)},
         {
@@ -57,12 +68,35 @@ def update_note(note_id: str, note: Note):
             }
         }
     )
-    return {"message": "Note updated"}
 
+    # If a document was matched and updated
+    if result.matched_count == 1:
+        return {
+            "success": True,
+            "message": "Note updated successfully"
+        }
+
+    # If no matching document was found
+    return {
+        "success": False,
+        "message": "Note not found"
+    }
+
+# DELETE API to delete a note
 @router.delete("/notes/{note_id}")
 def delete_note(note_id: str):
+    # Delete note using MongoDB ObjectId
     result = notes_collection.delete_one({"_id": ObjectId(note_id)})
+
+    # If note was successfully deleted
     if result.deleted_count == 1:
-        return {"message": "Note deleted"}
-    else:
-        return {"message": "Note not found"}
+        return {
+            "success": True,
+            "message": "Note deleted successfully"
+        }
+
+    # If note was not found
+    return {
+        "success": False,
+        "message": "Note not found"
+    }
