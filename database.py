@@ -17,7 +17,7 @@ load_dotenv()
 
 # Create MongoDB client (connects FastAPI to MongoDB)
 client = MongoClient(
-    os.getenv("MONGODB_URI"),  # Get DB URL from .env
+    os.getenv("MONGODB_URL"),  # Get DB URL from .env
     tls=True,                 # Enable secure connection
     tlsCAFile=certifi.where() # SSL certificate
 )
