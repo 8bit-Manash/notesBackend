@@ -10,6 +10,9 @@ from bson import ObjectId
 # Import MongoDB collection to store and fetch notes
 from database import notes_collection
 
+# Import text summarization service
+from services.hf_summarizer import summarize_text_hf
+
 # Create router object to define API endpoints
 router = APIRouter()
 
@@ -100,3 +103,37 @@ def delete_note(note_id: str):
         "success": False,
         "message": "Note not found"
     }
+
+# POST API to summarize a note using LLM
+@router.post("/notes/{note_id}/summarize-llm")
+def summarize_note_llm(note_id: str):
+    note = notes_collection.find_one({"_id": ObjectId(note_id)})
+
+    if not note:
+        return {"error": "Note not found"}
+
+    summary = summarize_text_hf(note["content"])
+
+    notes_collection.update_one(
+        {"_id": ObjectId(note_id)},
+        {"$set": {"summary": summary}}
+    )
+
+    return {"summary": summary}
+
+@router.post("/summarize-text")
+def summarize_text_api(payload: dict):
+    text = payload.get("text", "")
+    note_id = payload.get("note_id")
+
+    summary = summarize_text_hf(text)
+
+    # Save summary if note_id is provided
+    if note_id:
+        notes_collection.update_one(
+            {"_id": ObjectId(note_id)},
+            {"$set": {"summary": summary}}
+        )
+
+    return {"summary": summary}
+
